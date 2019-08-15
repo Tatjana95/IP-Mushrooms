@@ -1,0 +1,311 @@
+% !TEX encoding = UTF-8 Unicode
+\documentclass[a4paper]{article}
+
+\usepackage{color}
+\usepackage{url}
+\usepackage[T2A]{fontenc} % enable Cyrillic fonts
+\usepackage[utf8]{inputenc} % make weird characters work
+\usepackage{graphicx}
+ 
+\usepackage[english,serbian]{babel}
+%\usepackage[english,serbianc]{babel} %ukljuciti babel sa ovim opcijama, umesto gornjim, ukoliko se koristi cirilica
+
+\usepackage[unicode]{hyperref}
+\hypersetup{colorlinks,citecolor=green,filecolor=green,linkcolor=blue,urlcolor=blue}
+
+\usepackage{listings}
+\usepackage{pgf-pie}
+
+\usepackage[
+  separate-uncertainty = true,
+  multi-part-units = repeat
+]{siunitx}
+
+%\newtheorem{primer}{Пример}[section] %ćirilični primer
+\newtheorem{primer}{Primer}[section]
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\scriptsize\ttfamily,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1000,                % start line enumeration with line 1000
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Python,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+\begin{document}
+
+\title{Klasifikacija pe\v curaka\\ \small{Seminarski rad u okviru kursa\\Istraživanje podataka\\ Matematički fakultet}}
+
+\author{Tatjana Radovanović\\}
+
+
+\maketitle
+
+\abstract{
+Svrha ovog rada je da ispita da li se pečurke mogu razvrstati na jestive i otrovne samo na osnovu izgleda. Prilikom rešavanja ovog problema upotrebljene su različite metode klasifikacije. Za obradu podataka korišćen je programski jezik Python.
+}
+
+\tableofcontents
+
+\newpage
+
+\section{Uvod}
+\label{sec:uvod}
+Pečurke se od davnina koriste u ljudskoj ishrani. Kao što je poznato, neke su jestive, a neke veoma otrovne, čak i smrtonosne. Ljudi su vremenom zapazili da otrovne pečurke imaju neke karakteristike koje jestive nemaju i obrnuto. Cilj ovog rada je da utvrdi koliko je ova metoda pouzdana, tj. da li sa sigurnošću možemo tvrditi da je neka pečurka jestiva samo na osnovu njenog opisa bez daljih hemijskih analiza.
+
+Poglavlje \ref{sec:podaci} upoznaje čitaoce sa podacima i objašnjava upotrebljene tehnike pretprocesiranja. U poglavlju \ref{sec:klasifikacija} prikazane su različite metode klasifikacije i njihovi rezultati. Metode koje su obrađene su drveta odlučivanja, k najbližih suseda, naivni Bajesov klasifikator, veštačke neuronske mreže i metod potpornih vektora.
+
+Za obradu podataka korišćene su biblioteke programskog jezika Python. Modeli konstruisani za potrebe ovog rada se mogu naći na \href{https://github.com/Tatjana95/IP-Mushrooms}{ovoj adresi}.
+
+
+\section{Podaci}
+\label{sec:podaci}
+
+Podaci su preuzeti sa \href{https://archive.ics.uci.edu/ml/datasets/Mushroom}{linka}. Korišćen je prošireni skup podataka koji sadrži 8416 redova sa 23 atributa.  Svi atributi su kategorički i odnose se na fizičke karakteristike pečuraka. U skupu se nalazi 53.327\% jestivih i 46.637\% otrovnih pečuraka. Odnos jestivih i otrovnih pečuraka je prikazan na grafiku \ref{fig:jestiveOtrovne}.
+
+\begin{figure}[h]
+\centering
+\label{fig:jestiveOtrovne}
+\begin{tikzpicture}
+\pie[rotate = 90, radius = 2.1]
+    {53.327 / Jestive,
+    46.637 / Otrovne}
+\end{tikzpicture}
+\caption{Odnos jestivih i otrovnih pečuraka}
+\end{figure}
+
+\subsection{Pretprocesiranje podataka}
+Pre pravljenja modela potrebno je pripremiti podatke. Vrednosti atributa 'Edible', koji uzima vrednosti EDIBLE i POISONOUS, 'ručno' su postavljeni na 1 i 0 kako bi se osiguralo da jedinica označava da je pečurka jestiva. Slično radimo i sa atributom 'Bruises' gde vrednost BRUISES menjamo sa 1, a vrednost NO sa 0.
+
+Nedostajuće vrednosti u našem skupu podataka su označene '?'. Vrednost '?' menjamo sa nan iz numpy biblioteke. Daljom analizom se utvrđuje da su sve nedostajuće vrednosti vezane za atribut 'Stalk-root' i da čine približno 29,47\% svih vrednosti tog atributa. Zbog toga je odlučeno da se taj atribut ukloni iz našeg skupa. 
+
+Uklonjen je i atribut 'Veil-type'. Razlog za takvu odluku je taj što ovaj atribut ima samo jednu vrednost na celom skupu.
+
+Kako su svi atributi kategorički potrebno je izvršiti dodatno pretprocesiranje. Za to je upotrebljeno binarno kodiranje.\begin{lstlisting}[caption={Binarno kodiranje},frame=single, label=simple]
+df = pd.get_dummies(df)
+\end{lstlisting}
+
+Dodatno, vršena je i standardizacija podataka. Za to je korišćen StandardScaler za sve metode klasifikacije osim za naivni Bajesov klasifikator. StandardScaler transformiše vrednosti atributa tako da srednja vrednost bude 0, a standardna devijacija 1. Standardna ocena za uzorak x se računa po sledećoj formuli
+\begin{equation}
+    z = \frac{z - u}{s}
+\end{equation}
+gde je \textit{u} srednja vrednost, a \textit{s} standardna devijacija\cite{sklearn}. 
+Kod naivnog Bajesovog klasifikatora je korišćen MinMaxScaler jer je potrebno da svi atributi budu pozitivni. MinMaxScaler transformiše atribute tako što ih skalira u zadatom opsegu. Ako opseg nije zadat, kao što je slučaj u našem modelu, onda se koristi podrazumevani rang (0, 1)\cite{sklearn}.
+
+\section{Klasifikacija}
+\label{sec:klasifikacija}
+Zadatak ovog rada je da napravi model koji vrši klasifikaciju pečuraka u jestive i otrovne. Metode koje su upotrebljene kako bi se rešio ovaj problem su:
+\begin{itemize}
+    \item drvo odlučivanja
+    \item k najbližih suseda
+    \item naivni Bajesov klasifikator
+    \item veštačke neuronske mreže
+    \item metod potpornih vektora
+\end{itemize}
+
+Za ciljnu promenljivu y uzet je atribut 'Edible', a x su ostali atributi. Pre obučavanja svakog od ovih metoda potrebno je izvršiti podelu na podatke za trening i podatke za testiranje. Za testiranje je uzeto 30\% podataka i izvršena je stratifikacija po ciljnoj promenljivoj.
+\begin{lstlisting}[caption={Podela na podatke za trening i obučavanje},frame=single, label=simple]
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, stratify = y)
+\end{lstlisting}
+
+Bitno je napomenuti da je standardizacija podataka izvršena nakon podele na trening i test skup. Razlog tome je taj što se podaci koji se koriste za evaluaciju modela ni na koji način ne smeju koristiti prilikom njegovog obučavanja. Ukoliko bi se standardizacija primenila na ceo skup podataka pre podele na trening i test skup tada bi vrednosti atributa iz skupa za testiranje uticali na prosek i standardnu devijaciju koji se koriste pri standardizaciji i samim tim imali uticaj i na skup za običavanje\cite{masinsko}.
+\begin{lstlisting}[caption={Standardizacija skupova za obučavanje i testiranje},frame=single, label=simple]
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+\end{lstlisting}
+
+
+Prilikom pravljenja modela za k najbližih suseda, drvo odlučivanja, neuronske mreže i metod potpornih vektora korišćena je unakrsna validacija. Ovom tehnikom se lakše pronalaze parametri koji daju najbolje rezultate.
+
+\subsection{Drvo odlučivanja}
+Za unakrsnu validaciju koristimo drveta odlučivanja sa različitim parametrima. Kao kriterijumi podele se koriste entropija i Ginijev kriterijum, maksimalna dubina stabla je između 3 i 10\footnote{Ne uključujući 10. Npr. range(1, 4) su brojevi 1, 2 i 3}, a maksimalan broj listova je između 2 i 10. 
+
+\begin{lstlisting}[caption={Pravljenje drveta odlučivanja},frame=single, label=simple]
+parameters = [{'criterion' : ['gini', 'entropy'],
+               'max_depth' : range(3, 10),
+               'max_leaf_nodes' : range(2, 10),
+}]
+
+dt = GridSearchCV(DecisionTreeClassifier(), parameters, cv = 5)
+
+dt.fit(x_train, y_train)
+\end{lstlisting}
+
+Najbolji rezultati se dobijaju kada se za kriterijum podele koristi entropija i kada je maksimalna dubina 4, a maksimalan broj listova 8. Uspeh takvog klasifikatora se procenjuje na \SI{0.999 \pm 0.001}. Na skupu za testiranje preciznost datog klasifikatora za klasu 0 iznosi približno 1, a za klasu 1 približno 0.997. Odziv za klasu 0 je približno 0.9966, a za klasu 1 približno 1. Matrica konfuzije je data u tabeli \ref{tab:matKonfDecisionTree}. 
+\begin{table}[h!]
+\begin{center}
+\caption{Matrica konfuzije za drvo odlučivanja}
+\begin{tabular}{|c|l|r|} \hline
+& 0& 1\\ \hline
+0 &1174&4\\ \hline
+1 &0&1347\\ \hline
+\end{tabular}
+\label{tab:matKonfDecisionTree}
+\end{center}
+\end{table}
+
+
+
+
+\subsection{K najbližih suseda}
+Svi modeli k najbližih suseda koji su analizirani unakrsnom validacijom daju dobre rezultate na skupu za validaciju. Uspeh svakog klasifikatora je oko 0.999. Broj suseda je u rasponu od 1 do 9. Kao parametri rastojanja Minkovskog se uzimaju 1 (Menhentn rastojanje) i 2 (Euklidsko rastojanje). Težina suseda može biti 'uniform' i 'distance'\footnote{Kod 'uniform' svi susedi imaju jednak uticaj dok kod 'distance' veći uticaj imaju bliži susedi}.
+
+\begin{lstlisting}[caption={Obučavanje modela k najbližih suseda},frame=single, label=simple]
+parameters = [{'n_neighbors': range(1,9),
+               'p':[1, 2],
+               'weights': ['uniform', 'distance'],
+               }]
+
+knn = GridSearchCV(KNeighborsClassifier(), parameters, cv=5)
+
+knn.fit(x_train, y_train)
+\end{lstlisting}
+
+Klasifikator koji koristi Menhentn rastojanje i čija je težina suseda uniformna, a broj suseda jednak 1 ima stopostotan uspeh na validacionom skupu. Na test skupu ponovo ima idealne rezultate, i preciznost i odziv za obe klase iznosi 1. Matrica konfuzije je prikazana u tabeli \ref{tab:matKonfKNN}
+
+\begin{table}[h!]
+\begin{center}
+\caption{Matrica konfuzije za k najbližih suseda}
+\begin{tabular}{|c|l|r|} \hline
+& 0& 1\\ \hline
+0 &1178&0\\ \hline
+1 &0&1347\\ \hline
+\end{tabular}
+\label{tab:matKonfKNN}
+\end{center}
+\end{table}
+
+
+\subsection{Naivni Bajesov klasifikator}
+Kod Naivnog Bajesovog klasifikatora nije upotrebljena unakrsna validacija i koriste se podrazumevani parametri. Ovaj klasifikator je precizno klasifikovao 2444 instance od 2525 koliko ih se nalazi u test skupu. Preciznost za klasu 0 iznosi približno 0.9937, a za klasu 1 približno 0.9477. Odziv za klasu 0 je približno 0.9372, a za klasu 1 približno 0.9948. U tabeli \ref{tab:matKonfMNB} je prikazana matrica konfuzije.
+
+\begin{lstlisting}[caption={Obučavanje Naivnog Bajesovog klasifikatora},frame=single, label=simple]
+scaler = MinMaxScaler()
+x_train = scaler.fit_transform(x_train)
+x_test = scaler.transform(x_test)
+
+mnb = MultinomialNB()
+mnb.fit(x_train, y_train)
+\end{lstlisting}
+
+\begin{table}[h!]
+\begin{center}
+\caption{Matrica konfuzije za Naivni Bajesov klasifikator}
+\begin{tabular}{|c|l|r|} \hline
+& 0& 1\\ \hline
+0 &1104&74\\ \hline
+1 &7&1340\\ \hline
+\end{tabular}
+\label{tab:matKonfMNB}
+\end{center}
+\end{table}
+
+
+\subsection{Veštačke neuronske mreže}
+Za obučavanje neuronkih mreža je korišćen rešavač za optimizaciju težina stohističkog opadajućeg gradijenta.  Maksimalan broj iteracija je 500. Konstruisane su mreže sa različitim parametrima. Stopa učenja pri ažuriranju težina (learning\_rate) može biti konstantna (constant), može se postepeno smanjivati u koraku t (invscaling) i može da se ne menja dok se vrednost funkcije gubitka smanjuje (adaptive). Inicijalna stopa učenja (learning\_rate\_init) je 0.01, 0.005, 0.002 i 0.001. Kao aktivacione funkcije (activation) se koriste identička funkcija (identity)\footnote{f(x) = x}, sigmoidna funkcija (logistic)\footnote{$\sigma (x) =  \frac{1}{1 + e^{-x}} $}, tanges hiperbolički (tanh)\footnote{$tanh(x) = \frac{e^{2x} - 1}{e^{2x} + 1} $} i ispravljena linearna jedinica (relu)\footnote{relu(x) = max(0, x)}. Broj neurona u skrivenim slojevima je (10, 3) ili (10, 10).
+
+\begin{lstlisting}[caption={Obučavanje neuronskih mreža},frame=single, label=simple]
+params = [{'solver':['sgd'],
+           'learning_rate':['constant', 'invscaling', 'adaptive'],
+           'learning_rate_init':[0.01, 0.005, 0.002, 0.001],
+            'activation' : ['identity', 'logistic', 'tanh', 'relu' ],
+            'hidden_layer_sizes' : [(10,3), (10,10),],
+           'max_iter': [500]
+
+           }]
+
+mlp = GridSearchCV(MLPClassifier(), params, cv=5)
+mlp.fit(x_train, y_train)
+\end{lstlisting}
+
+Uspeh različitih neuronskih mreža na validacionom skupu je vrlo raznolik. Najgori klasifikator ima uspeh \SI{0.480 \pm 0.053}, a uspeh najboljeg iznosi \SI{1 \pm 0.001}. Kod najboljeg modela aktivaciona funkcija je identička, broj neurona u skrivenim slojevima je (10, 3), stopa učenja pri ažuriranju težina je 'adaptive' i inicijalna stopa učenja je 0.01. Na test skupu ova neuronska mreža za klasu 0 ima preciznost 1, a za klasu 1 približno 0.9993. Odziv za klasu 0 je približno 0.9992, a za klasu 1 iznosi 1. Matrica konfuzije je data u tabeli \ref{tab:matKonfMLP}.
+
+\begin{table}[h!]
+\begin{center}
+\caption{Matrica konfuzije za neuronsku mrežu}
+\begin{tabular}{|c|l|r|} \hline
+& 0& 1\\ \hline
+0 &1177&1\\ \hline
+1 &0&1347\\ \hline
+\end{tabular}
+\label{tab:matKonfMLP}
+\end{center}
+\end{table}
+
+
+\subsection{Metod potpornih vektora}
+Parametri koji su korišćeni za unakrsnu validaciju su sledeći: kao parametar regularizacije korišćene su vrednosti 0.01, 0.1 i 1, a  kao funkcije kernela se zadaju 'linear', 'poly' i 'sigmoid'. Uspeh ovih klasifikatora na validacionom skupu je raznolik. Najlošiji klasifikator ima uspeh \SI{0.695 \pm 0.024} dok najbolji klasifikatori imaju stopostotni uspeh.
+
+\begin{lstlisting}[caption={Unakrsna validacija kod metoda potpornih vektora},frame=single, label=simple]
+parameters = [{'C': [0.01, 0.1, 1],
+
+               'kernel' : ['linear', 'poly', 'sigmoid']
+
+}]
+
+
+
+svm = GridSearchCV(SVC(), parameters, cv=5)
+
+svm.fit(x_train, y_train)
+\end{lstlisting}
+
+Kao najbolji model izdvaja se onaj kod koga je parametar regularizacije 0.1, a funkcija kernela 'linear'. Preciznost i odziv na test skupu iznose 1 za obe klase. Matrica konfuzije se nalazi u tabeli \ref{tab:matKonfSVC}
+
+\begin{table}[h]
+\begin{center}
+\caption{Matrica konfuzije za potporne vektore}
+\begin{tabular}{|c|l|r|} \hline
+& 0& 1\\ \hline
+0 &1178&0\\ \hline
+1 &0&1347\\ \hline
+\end{tabular}
+\label{tab:matKonfSVC}
+\end{center}
+\end{table}
+
+\section{Zaključak}
+\label{sec:zakljucak}
+Svi upotrebljeni metodi klasifikacije daju zadovoljavajuće rezultate. Najbolje se pokazao metod k najbližih suseda koji je za sve parametre u unakrsnoj validaciji imao uspeh preko 99\%, a klasifikator koji se pokazao najboljim imao je idealno predviđanje na test skupu. Za njim sledi metod potpornih vektora čiji najbolji klasifikator takođe tačno razvrstava pečurke iz test skupa. Ipak, ovaj metod ne daje tako dobre rezultate za sve parametre korišćene prilikom unakrsne validacije i zbog toga se metod k najbližih suseda smatra boljim.
+
+Najbolji klasifikator kod neuronske mreže pravi jako malu grešku na test skupu. Drvo odlučivanja takođe daje dobre rezultate, ali malo lošije nego neuronska mreža. Ipak, trebalo bi napomenuti da neuronska mreža ne radi dobro za sve ispitane parametre, čak za neke daje loše rezultate, dok kod drveta odlučivanja nisu primećene tolike oscilacije uspeha za različite parametre.
+
+Naivni Bajesov klasifikator se najlošije pokazao u ovom zadatku. Iako daje dobre rezultate greši dosta više nego drugi klasifikatori. Trebalo bi uzeti u obzir činjenicu da je ovom metodu posvećeno najmanje pažnje i da su za njegovo obučavanje upotrebljeni podrazumevani parametri, kao i da nije korišćena unakrsna validacija.
+
+Rezultati ovog rada pokazuju da je moguće na osnovu fizičkih karakteristika pečurake utvrditi da li je jestiva ili otrovna. Ipak, sa njihovom konzumacijom treba biti oprezan jer u prirodi ništa nije 100\% sigurno i pečurka koja nije opisana u ovom skupu podataka može iznenaditi i najbolji klasifikator.
+
+
+\addcontentsline{toc}{section}{Literatura}
+\appendix
+\bibliography{seminarski} 
+\bibliographystyle{plain}
+
+\end{document}
