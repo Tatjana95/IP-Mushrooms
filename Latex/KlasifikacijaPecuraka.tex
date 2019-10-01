@@ -112,7 +112,7 @@ df = pd.get_dummies(df)
 
 Dodatno, vršena je i standardizacija podataka. Za to je korišćen StandardScaler za sve metode klasifikacije osim za naivni Bajesov klasifikator. StandardScaler transformiše vrednosti atributa tako da srednja vrednost bude 0, a standardna devijacija 1. Standardna ocena za uzorak x se računa po sledećoj formuli
 \begin{equation}
-    z = \frac{z - u}{s}
+    z = \frac{x - u}{s}
 \end{equation}
 gde je \textit{u} srednja vrednost, a \textit{s} standardna devijacija\cite{sklearn}. 
 Kod naivnog Bajesovog klasifikatora je korišćen MinMaxScaler jer je potrebno da svi atributi budu pozitivni. MinMaxScaler transformiše atribute tako što ih skalira u zadatom opsegu. Ako opseg nije zadat, kao što je slučaj u našem modelu, onda se koristi podrazumevani rang (0, 1)\cite{sklearn}.
